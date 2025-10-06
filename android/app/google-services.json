@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "631930255233",
+    "project_id": "e-commerce-app-8c85a",
+    "storage_bucket": "e-commerce-app-8c85a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:631930255233:android:0aae07fb7ec16680df1a80",
+        "android_client_info": {
+          "package_name": "MagicMart.com"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_pRvszc6upUe4axu1e0Wyt1ZQet4nXUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:631930255233:android:0ad0ee6a47f0cc05df1a80",
+        "android_client_info": {
+          "package_name": "com.example.e_commerce_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_pRvszc6upUe4axu1e0Wyt1ZQet4nXUI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
