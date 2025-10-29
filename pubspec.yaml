@@ -11,12 +11,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+    
 
   # UI Design
+  intl: ^0.18.1 
   carousel_slider: ^5.1.1
   smooth_page_indicator: ^1.2.1
   iconsax: 0.0.8
   cupertino_icons: ^1.0.8
+
 
   # State Management
   get: ^4.6.5
@@ -25,6 +28,12 @@ dependencies:
   firebase_core: ^3.15.2   
   firebase_auth: ^5.7.0   
   cloud_firestore: ^5.6.12
+  path_provider: ^2.1.2
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  image_picker: ^1.0.4
+  shared_preferences: ^2.5.3
+  
 
 dev_dependencies:
   flutter_test:

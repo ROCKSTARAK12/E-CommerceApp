@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 
-class PageTransitionHelper {
-  static Route createRoute(Widget page) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0); // slide in from right
-        const end = Offset.zero;
-        const curve = Curves.easeInOut;
+Route createSlideRoute(Widget page, {bool fromRight = true}) {
+  return PageRouteBuilder(
+    transitionDuration: const Duration(milliseconds: 500),
+    pageBuilder: (context, animation, secondaryAnimation) => page,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final offsetAnimation = Tween<Offset>(
+        begin: Offset(fromRight ? 1.0 : -1.0, 0.0),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut));
 
-        var tween = Tween(
-          begin: begin,
-          end: end,
-        ).chain(CurveTween(curve: curve));
-        return SlideTransition(position: animation.drive(tween), child: child);
-      },
-    );
-  }
+      return SlideTransition(position: offsetAnimation, child: child);
+    },
+  );
 }

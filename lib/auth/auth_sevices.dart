@@ -6,9 +6,18 @@ class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Sign Up Method
-  static Future<User?> signUp(String email, String password) async {
+  // ✅ Replace with your actual default profile image link
+  static const String _defaultProfileURL =
+      "https://firebasestorage.googleapis.com/v0/b/YOUR_BUCKET_NAME_HERE/o/default_profile.png?alt=media";
+
+  // 🟣 SIGN UP METHOD
+  static Future<User?> signUp(
+    String name,
+    String email,
+    String password,
+  ) async {
     try {
+      // Create Firebase Auth user
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password)
           .timeout(const Duration(seconds: 20));
@@ -16,25 +25,27 @@ class AuthService {
       final User? user = userCredential.user;
 
       if (user != null) {
-        // Save user data to Firestore
-        await _saveUserToFirestore(user, email);
+        // ✅ Update display name and photo URL
+        await user.updateDisplayName(name);
+        await user.updatePhotoURL(_defaultProfileURL);
+        await user.reload();
+
+        // ✅ Save user info to Firestore
+        await _saveUserToFirestore(user, name, email);
         return user;
       }
-
       return null;
     } on TimeoutException {
-      throw Exception(
-        'Request timed out. Please check your internet connection.',
-      );
+      throw Exception('Request timed out. Please check your internet.');
     } on FirebaseAuthException catch (e) {
       _handleSignUpError(e);
-      return null; // This line will never be reached due to rethrow
+      return null;
     } catch (e) {
       throw Exception('An unexpected error occurred. Please try again.');
     }
   }
 
-  // Handle sign up errors
+  // 🟣 HANDLE SIGN-UP ERRORS
   static void _handleSignUpError(FirebaseAuthException e) {
     switch (e.code) {
       case 'weak-password':
@@ -46,36 +57,38 @@ class AuthService {
       case 'operation-not-allowed':
         throw Exception('Email/password accounts are not enabled.');
       case 'network-request-failed':
-        throw Exception(
-          'Network error. Please check your internet connection.',
-        );
+        throw Exception('Network error. Please check your internet.');
       default:
-        throw Exception('Sign up failed: ${e.message ?? 'Unknown error'}');
+        throw Exception('Sign-up failed: ${e.message ?? 'Unknown error'}');
     }
   }
 
-  // Save user to Firestore
-  static Future<void> _saveUserToFirestore(User user, String email) async {
+  // 🟣 SAVE USER TO FIRESTORE
+  static Future<void> _saveUserToFirestore(
+    User user,
+    String name,
+    String email,
+  ) async {
     try {
       await _firestore
           .collection('users')
           .doc(user.uid)
           .set({
             'uid': user.uid,
+            'name': name,
             'email': email,
+            'photoURL': _defaultProfileURL,
             'createdAt': FieldValue.serverTimestamp(),
-            'displayName': user.displayName ?? '',
-            'photoURL': user.photoURL ?? '',
             'lastLogin': FieldValue.serverTimestamp(),
           })
           .timeout(const Duration(seconds: 10));
     } catch (e) {
-      // Log error but don't prevent user creation
-      print('Firestore save error: $e');
+      // Don't break signup on Firestore error
+      print('⚠️ Firestore save error: $e');
     }
   }
 
-  // Login Method
+  // 🟣 LOGIN METHOD
   static Future<User?> login(String email, String password) async {
     try {
       UserCredential userCredential = await _auth
@@ -90,9 +103,7 @@ class AuthService {
 
       return user;
     } on TimeoutException {
-      throw Exception(
-        'Login timed out. Please check your internet connection.',
-      );
+      throw Exception('Login timed out. Please check your internet.');
     } on FirebaseAuthException catch (e) {
       _handleLoginError(e);
       return null;
@@ -101,7 +112,7 @@ class AuthService {
     }
   }
 
-  // Handle login errors
+  // 🟣 HANDLE LOGIN ERRORS
   static void _handleLoginError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
@@ -113,17 +124,15 @@ class AuthService {
       case 'user-disabled':
         throw Exception('This account has been disabled.');
       case 'too-many-requests':
-        throw Exception('Too many failed attempts. Please try again later.');
+        throw Exception('Too many failed attempts. Try again later.');
       case 'network-request-failed':
-        throw Exception(
-          'Network error. Please check your internet connection.',
-        );
+        throw Exception('Network error. Please check your internet.');
       default:
         throw Exception('Login failed: ${e.message ?? 'Unknown error'}');
     }
   }
 
-  // Update last login
+  // 🟣 UPDATE LAST LOGIN
   static Future<void> _updateLastLogin(String uid) async {
     try {
       await _firestore
@@ -131,32 +140,23 @@ class AuthService {
           .doc(uid)
           .update({'lastLogin': FieldValue.serverTimestamp()})
           .timeout(const Duration(seconds: 5));
-    } catch (e) {
-      // Silent fail - not critical
+    } catch (_) {
+      // Silent fail
     }
   }
 
-  // Sign In Method (alias for login)
-  static Future<User?> signIn(String email, String password) async {
-    return await login(email, password);
-  }
-
-  // Sign Out Method
+  // 🟣 SIGN OUT
   static Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // Get current user
-  static User? getCurrentUser() {
-    return _auth.currentUser;
-  }
+  // 🟣 GET CURRENT USER
+  static User? getCurrentUser() => _auth.currentUser;
 
-  // Check if user is logged in
-  static bool isLoggedIn() {
-    return _auth.currentUser != null;
-  }
+  // 🟣 CHECK LOGIN STATUS
+  static bool isLoggedIn() => _auth.currentUser != null;
 
-  // Reset Password Method
+  // 🟣 RESET PASSWORD
   static Future<void> resetPassword(String email) async {
     try {
       await _auth
@@ -171,7 +171,6 @@ class AuthService {
     }
   }
 
-  // Handle password reset errors
   static void _handlePasswordResetError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
@@ -179,7 +178,7 @@ class AuthService {
       case 'invalid-email':
         throw Exception('Please enter a valid email address.');
       case 'too-many-requests':
-        throw Exception('Too many requests. Please try again later.');
+        throw Exception('Too many requests. Try again later.');
       default:
         throw Exception(
           'Password reset failed: ${e.message ?? 'Unknown error'}',
@@ -187,7 +186,7 @@ class AuthService {
     }
   }
 
-  // Get user data from Firestore
+  // 🟣 GET USER DATA
   static Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
       DocumentSnapshot doc = await _firestore
@@ -196,16 +195,14 @@ class AuthService {
           .get()
           .timeout(const Duration(seconds: 10));
 
-      if (doc.exists) {
-        return doc.data() as Map<String, dynamic>?;
-      }
+      if (doc.exists) return doc.data() as Map<String, dynamic>?;
       return null;
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  // Update user profile
+  // 🟣 UPDATE PROFILE
   static Future<void> updateProfile(String displayName, String photoURL) async {
     try {
       User? user = _auth.currentUser;
@@ -213,9 +210,8 @@ class AuthService {
         await user.updateDisplayName(displayName);
         await user.updatePhotoURL(photoURL);
 
-        // Update Firestore
         await _firestore.collection('users').doc(user.uid).update({
-          'displayName': displayName,
+          'name': displayName,
           'photoURL': photoURL,
           'updatedAt': FieldValue.serverTimestamp(),
         });
@@ -225,14 +221,12 @@ class AuthService {
     }
   }
 
-  // Delete user account
+  // 🟣 DELETE ACCOUNT
   static Future<void> deleteAccount() async {
     try {
       User? user = _auth.currentUser;
       if (user != null) {
-        // Delete from Firestore first
         await _firestore.collection('users').doc(user.uid).delete();
-        // Then delete auth account
         await user.delete();
       }
     } catch (e) {
